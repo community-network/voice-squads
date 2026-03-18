@@ -159,6 +159,19 @@ class VoiceManagementView(discord.ui.View):
 
 
     @discord.ui.button(
+        label="🔓 Remove restrictions",
+        custom_id="voice_unlock",
+        style=discord.ButtonStyle.secondary,
+    )
+    async def voice_unlock_callback(self, interaction: discord.Interaction, button):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                await interaction.user.voice.channel.edit(user_limit=0)
+                # TODO: permission and user limits
+                return await interaction.response.send_message("Voice channel unlocked!", ephemeral=True)
+
+
+    @discord.ui.button(
         label="👑 Change owner",
         custom_id="voice_change_owner",
         style=discord.ButtonStyle.danger,
