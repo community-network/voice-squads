@@ -22,7 +22,7 @@ services:
     networks:
       - kdr
   kdr-bot:
-    image: ghcr.io/community-network/kdr-bot/kdr-bot:latest
+    image: ghcr.io/community-network/voice-squads/voice-squads-bot:latest
     restart: always
     depends_on:
       - db
