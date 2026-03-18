@@ -31,6 +31,7 @@ services:
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+      - DEFAULT_CHANNEL_NAMES=${DEFAULT_CHANNEL_NAMES}
       - DB_HOST=db
     networks:
       - voice-squads
