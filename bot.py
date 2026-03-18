@@ -110,11 +110,15 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     async with bot.db.create_session() as session:
         if member.guild.id is None:
             return
-        if before.channel is None and after.channel is not None: # join
+        if (before.channel is None and after.channel is not None): # join
             await on_voice_channel_join(session, member, after)
 
         if before.channel is not None and after.channel is None: # leave
             await on_voice_channel_leave(session, member, before)
+
+        if before.channel is not None and after.channel is not None and before.channel.id != after.channel.id:
+            await on_voice_channel_leave(session, member, before)
+            await on_voice_channel_join(session, member, after)
 
                 
 
