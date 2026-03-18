@@ -20,7 +20,7 @@ services:
       retries: 5
       start_period: "10s"
     networks:
-      - kdr
+      - voice-squads
   voice-squads-bot:
     image: ghcr.io/community-network/voice-squads/voice-squads-bot:latest
     restart: always
@@ -33,11 +33,11 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - DB_HOST=db
     networks:
-      - kdr
+      - voice-squads
 
 volumes:
   postgress_db:
 
 networks:
-  kdr:
+  voice-squads:
     driver: bridge
