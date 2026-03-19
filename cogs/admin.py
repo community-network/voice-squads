@@ -1,9 +1,10 @@
 """User management"""
 
 import logging
+from typing import Mapping
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import PermissionOverwrite, app_commands
 
 from bot import VoiceSquadBot
 from utils.channel_names import get_channel_names
@@ -67,6 +68,48 @@ class ChangeOwnerView(discord.ui.View):
                 return await interaction.response.send_message(f'{select.values[0].mention} is now the owner of this voice channel', ephemeral=True)
 
 
+class VoiceRoleLockView(discord.ui.View):
+    def __init__(self, bot: VoiceSquadBot):
+        self.bot = bot
+        super().__init__(timeout=None)
+
+    @discord.ui.select(custom_id="voice_role_lock_2", cls=discord.ui.RoleSelect, min_values=1, max_values=10)
+    async def select_channels(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                channel = interaction.user.voice.channel
+                guild = interaction.guild
+                
+                overwrites = {key: value for key, value in channel.overwrites.items() if not isinstance(key, discord.role)}
+                overwrites[guild.default_role] = discord.PermissionOverwrite(connect=False)
+                
+                for role in select.values:
+                    overwrites[role] = discord.PermissionOverwrite(connect=True)
+
+                await channel.edit(overwrites=overwrites)
+                return await interaction.response.send_message("Allowed only the selected roles to join the channel", ephemeral=True)
+
+
+class VoiceUserLockView(discord.ui.View):
+    def __init__(self, bot: VoiceSquadBot):
+        self.bot = bot
+        super().__init__(timeout=None)
+
+    @discord.ui.select(custom_id="voice_role_lock_2", cls=discord.ui.UserSelect, min_values=1, max_values=10)
+    async def select_channels(self, interaction: discord.Interaction, select: discord.ui.UserSelect):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                channel = interaction.user.voice.channel
+                guild = interaction.guild
+                
+                overwrites = {key: value for key, value in channel.overwrites.items() if not isinstance(key, discord.Member)}
+                overwrites[guild.default_role] = discord.PermissionOverwrite(connect=False)
+                
+                for member in select.values:
+                    overwrites[member] = discord.PermissionOverwrite(connect=True)
+
+                await channel.edit(overwrites=overwrites)
+                return await interaction.response.send_message("Allowed only the selected users to join the channel", ephemeral=True)
 
 
 
@@ -167,7 +210,8 @@ class VoiceManagementView(discord.ui.View):
         async with self.bot.db.create_session() as session:
             if await channel_permision_check(session, interaction):
                 await interaction.user.voice.channel.edit(user_limit=0)
-                # TODO: permission and user limits
+                channel = interaction.user.voice.channel
+                await channel.edit(overwrites={})
                 return await interaction.response.send_message("Voice channel unlocked!", ephemeral=True)
 
 
@@ -180,8 +224,51 @@ class VoiceManagementView(discord.ui.View):
         async with self.bot.db.create_session() as session:
             if await channel_permision_check(session, interaction):
                 return await interaction.response.send_message("Who do you want as the new owner of the channel?", ephemeral=True, view=ChangeOwnerView(self.bot))
+
+
+    @discord.ui.button(
+        label="🔐 Lock by role",
+        custom_id="voice_role_lock",
+        style=discord.ButtonStyle.secondary,
+    )
+    async def role_lock_callback(self, interaction: discord.Interaction, button):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                return await interaction.response.send_message("Which roles do you want to allow?", ephemeral=True, view=VoiceRoleLockView(self.bot))
         
 
+    @discord.ui.button(
+        label="🔒 Lock by current users",
+        custom_id="voice_current_users_lock",
+        style=discord.ButtonStyle.secondary,
+    )
+    async def current_users_lock_callback(self, interaction: discord.Interaction, button):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                channel = interaction.user.voice.channel
+                guild = interaction.guild
+                
+                overwrites = {key: value for key, value in channel.overwrites.items() if not isinstance(key, discord.Member)}
+                overwrites[guild.default_role] = discord.PermissionOverwrite(connect=False)
+                
+                for member in channel.members:
+                    overwrites[member] = discord.PermissionOverwrite(connect=True)
+
+                await channel.edit(overwrites=overwrites)
+                return await interaction.response.send_message("Allowed only the current users to join the channel", ephemeral=True)
+        
+
+    @discord.ui.button(
+        label="🔒 Lock by selected users",
+        custom_id="voice_select_users_lock",
+        style=discord.ButtonStyle.secondary,
+    )
+    async def select_users_lock_callback(self, interaction: discord.Interaction, button):
+        async with self.bot.db.create_session() as session:
+            if await channel_permision_check(session, interaction):
+                return await interaction.response.send_message("Which users do you want to allow?", ephemeral=True, view=VoiceUserLockView(self.bot))
+        
+        
 class Admin(commands.Cog):
     def __init__(self, bot: VoiceSquadBot):
         self.bot = bot
@@ -274,4 +361,6 @@ async def setup(bot: VoiceSquadBot) -> None:
     bot.add_view(VoiceManagementView(bot))
     bot.add_view(ChangeOwnerView(bot))
     bot.add_view(SetLimitView(bot))
+    bot.add_view(VoiceRoleLockView(bot))
+    bot.add_view(VoiceUserLockView(bot))
     await bot.add_cog(Admin(bot))
