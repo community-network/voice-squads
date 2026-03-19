@@ -1,10 +1,9 @@
 """User management"""
 
 import logging
-from typing import Mapping
 import discord
 from discord.ext import commands
-from discord import PermissionOverwrite, app_commands
+from discord import app_commands
 
 from bot import VoiceSquadBot
 from utils.channel_names import get_channel_names
