@@ -179,10 +179,12 @@ class VoiceManagementView(discord.ui.View):
         self.bot = bot
         super().__init__(timeout=None)
 
+
     @discord.ui.button(
         label="📝 rename",
         custom_id="voice_rename",
         style=discord.ButtonStyle.success,
+        row=0,
     )
     async def rename_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -194,6 +196,7 @@ class VoiceManagementView(discord.ui.View):
         label="📍 Set limit",
         custom_id="voice_set_limit",
         style=discord.ButtonStyle.secondary,
+        row=0,
     )
     async def set_limit_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -205,6 +208,7 @@ class VoiceManagementView(discord.ui.View):
         label="🔓 Remove restrictions",
         custom_id="voice_unlock",
         style=discord.ButtonStyle.secondary,
+        row=0,
     )
     async def voice_unlock_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -219,6 +223,7 @@ class VoiceManagementView(discord.ui.View):
         label="👑 Change owner",
         custom_id="voice_change_owner",
         style=discord.ButtonStyle.danger,
+        row=0,
     )
     async def change_owner_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -230,6 +235,7 @@ class VoiceManagementView(discord.ui.View):
         label="🔐 Lock by role",
         custom_id="voice_role_lock",
         style=discord.ButtonStyle.secondary,
+        row=1,
     )
     async def role_lock_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -241,6 +247,7 @@ class VoiceManagementView(discord.ui.View):
         label="🔒 Lock by current users",
         custom_id="voice_current_users_lock",
         style=discord.ButtonStyle.secondary,
+        row=1,
     )
     async def current_users_lock_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
@@ -262,13 +269,14 @@ class VoiceManagementView(discord.ui.View):
         label="🔒 Lock by selected users",
         custom_id="voice_select_users_lock",
         style=discord.ButtonStyle.secondary,
+        row=1,
     )
     async def select_users_lock_callback(self, interaction: discord.Interaction, button):
         async with self.bot.db.create_session() as session:
             if await channel_permision_check(session, interaction):
                 return await interaction.response.send_message("Which users do you want to allow?", ephemeral=True, view=VoiceUserLockView(self.bot))
         
-        
+
 class Admin(commands.Cog):
     def __init__(self, bot: VoiceSquadBot):
         self.bot = bot
