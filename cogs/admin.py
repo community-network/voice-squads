@@ -6,11 +6,12 @@ from discord.ext import commands
 from discord import app_commands
 
 from bot import VoiceSquadBot
-from utils.channel_names import get_channel_names
+from database.dto.channel_names import ChannelName
+from utils.channel_names import add_voice_channel_name, get_channel_names, remove_voice_channel_name
 from utils.server_settings import get_guild, update_guild
 from utils.voice_channels import add_voice_channel, get_voice_channel, update_voice_channel
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy import and_, select, func
 
 async def channel_permision_check(session: AsyncSession, interaction: discord.Interaction,):
     voice = interaction.user.voice
@@ -281,6 +282,31 @@ class Admin(commands.Cog):
         self.bot = bot
         self.logger = logging.getLogger("admin")
 
+
+    async def channel_name_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Autocomplete channel names"""
+        async with self.bot.db.create_session() as session:
+            stmt = (
+                select(ChannelName.name)
+                .filter(
+                    and_(
+                        func.lower(ChannelName.name).startswith(func.lower(current)),
+                        ChannelName.server_id == interaction.guild_id,
+                    )
+                )
+                .limit(25)
+            )
+            users = await session.execute(stmt)
+            return [
+                app_commands.Choice(name=channel_name, value=channel_name)
+                for channel_name in users.scalars()
+            ]
+
+
     group = app_commands.Group(
         name="admin", description="Commands meant only for admins"
     )
@@ -318,7 +344,7 @@ class Admin(commands.Cog):
                     return
             
             await interaction.response.send_message("The set category is not found within the server")
-            # traceback.print_exc()
+
 
     @generate_group.command(name="voice-management", description="Generate the voice-management buttons")
     @app_commands.guild_only()
@@ -329,7 +355,7 @@ class Admin(commands.Cog):
         embed = discord.Embed(
             title="Manage squad voice channel",
             description="""
-            The first person that joins a squad channel, owns the channel until its empty again.
+            The first person that joins a squad cusernamehannel, owns the channel until its empty again.
             The owner of the channel can manage it with the buttons below."""
         )
         await interaction.response.send_message(
@@ -337,9 +363,60 @@ class Admin(commands.Cog):
         )
 
     
-    # generate_group = app_commands.Group(
-    #     name="names", description="Generate a message", parent=group
-    # )
+    names_group = app_commands.Group(
+        name="names", description="Change the used channel names", parent=group
+    )
+
+    @names_group.command(name="add", description="Add a voice channel name")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def add_voice_channel_name(self, interaction: discord.Interaction, channel_name: str) -> None:
+        """Add a voice channel name"""
+        await interaction.response.defer()
+        if interaction.guild is None:
+            return  # is already set to guild_only
+        async with self.bot.db.create_session() as session:
+            await add_voice_channel_name(session, interaction.guild_id, channel_name)
+            await interaction.followup.send("Channel name has been added to the list", ephemeral=True)
+
+    @names_group.command(name="remove", description="Remove a voice channel name")
+    @app_commands.guild_only()
+    @app_commands.autocomplete(
+        channel_name=channel_name_autocomplete
+    )
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def remove_voice_channel_name(self, interaction: discord.Interaction, channel_name: str) -> None:
+        """Add a voice channel name"""
+        await interaction.response.defer()
+        if interaction.guild is None:
+            return  # is already set to guild_only
+        async with self.bot.db.create_session() as session:
+            await remove_voice_channel_name(session, interaction.guild_id, channel_name)
+            await interaction.followup.send("Channel name has been removed from the list", ephemeral=True)
+
+    @names_group.command(name="list", description="List all voice channel names")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def list_voice_channel_names(self, interaction: discord.Interaction) -> None:
+        """list all voice channel names"""
+        await interaction.response.defer()
+        if interaction.guild is None:
+            return  # is already set to guild_only
+        async with self.bot.db.create_session() as session:
+            description = ""
+            channel_names = await get_channel_names(self.bot, session, interaction.guild_id, False)
+            for channel_name in channel_names:
+                description += f"{channel_name}\n"
+
+            if len(channel_names) <= 0:
+                await interaction.followup.send("No channel names have been set, bot it using the default set.", ephemeral=True)
+                return
+
+            embed = discord.Embed(title="Current custom channel names:", description=description)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     set_group = app_commands.Group(
         name="set", description="Set a setting", parent=group
