@@ -20,12 +20,12 @@ class OtherCommands(commands.Cog):
         embed = discord.Embed(
             color=0xFFA500,
             title="Help for the Voice Squad bot",
-            description='This bot auto generates a voice channel when there are no more empty voice channels, and also removes them to keep it clean.\n' \
-            'It will always leave 1 empty channel, for players to join.\n' \
-            'To setup the bot "/admin set category" to set the category where it needs to create the voice squad channels.\n' \
-            'Then use "/admin generate initial-channel" to create the initial squad voice channel to work with.\n' \
-            'And "/admin generate voice-management" to generate the buttons for users to alter the voice channel.\n' \
-            'The person that first joins the channel, will be the owner until it\'s empty again.\n' \
+            description='This bot auto generates a voice channel when there are no more empty voice channels, and also removes them to keep it clean. ' \
+            'It will always leave 1 empty channel, for players to join. ' \
+            'To setup the bot "/admin set category" to set the category where it needs to create the voice squad channels. ' \
+            'Then use "/admin generate initial-channel" to create the initial squad voice channel to work with.' \
+            'And "/admin generate voice-management" to generate the buttons for users to alter the voice channel. ' \
+            'The person that first joins the channel, will be the owner until it\'s empty again. ' \
             'You can use "/admin names add/list/remove" to overwrite the names of all the voice channel names it creates with your own set.',
         )
         await interaction.followup.send(embed=embed)
