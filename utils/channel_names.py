@@ -33,7 +33,6 @@ async def get_channel_names_csv(session: AsyncSession, server_id: int) -> tuple[
         outcsv = csv.writer(data_stream)
         outcsv.writerow(ChannelName.__table__.columns.keys())     
         for row in res:
-            print(row)
             outcsv.writerow([row[0].id, row[0].server_id, row[0].name])
         data_stream.seek(0)
         return (total, discord.File(data_stream, filename="channel_names.csv"))
