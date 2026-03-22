@@ -317,8 +317,8 @@ class Admin(commands.Cog):
 
     @generate_group.command(name="initial-channel", description="Generate the initial squad channel")
     @app_commands.guild_only()
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.checks.has_permissions(administrator=True)
+    # @app_commands.default_permissions(administrator=True)
+    # @app_commands.checks.has_permissions(administrator=True)
     async def generate_initial_channel(self, interaction: discord.Interaction) -> None:
         """Generate the initial squad channel"""
         async with self.bot.db.create_session() as session:
@@ -338,7 +338,11 @@ class Admin(commands.Cog):
                         await interaction.response.send_message("There are no more squad names available")
                         return
 
-                    voice_channel = await category.create_voice_channel(unused_channel_names[0])
+                    try:
+                        voice_channel = await category.create_voice_channel(unused_channel_names[0])
+                    except discord.DiscordException as e:
+                        await interaction.response.send_message(f"Failed to create the initial voice channel: {e}")
+                        return
                     await add_voice_channel(session, interaction.guild_id, voice_channel.id)
                     await interaction.response.send_message("Create the initial voice channel")
                     return
