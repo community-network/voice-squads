@@ -7,7 +7,7 @@ from discord import app_commands
 
 from bot import VoiceSquadBot
 from database.dto.channel_names import ChannelName
-from utils.channel_names import add_voice_channel_name, get_channel_names, remove_voice_channel_name
+from utils.channel_names import add_voice_channel_name, get_channel_names, get_channel_names_csv, remove_voice_channel_name
 from utils.server_settings import get_guild, update_guild
 from utils.voice_channels import add_voice_channel, get_voice_channel, update_voice_channel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -421,6 +421,22 @@ class Admin(commands.Cog):
 
             embed = discord.Embed(title="Current custom channel names:", description=description)
             await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @names_group.command(name="export", description="Export all voice channel names")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def export_voice_channel_names(self, interaction: discord.Interaction) -> None:
+        """Export all voice channel names"""
+        await interaction.response.defer()
+        if interaction.guild is None:
+            return  # is already set to guild_only
+        async with self.bot.db.create_session() as session:
+            total, channel_names = await get_channel_names_csv(session, interaction.guild_id)
+            if total <= 0:
+                await interaction.followup.send("No channel names have been set, bot it using the default set.", ephemeral=True)
+                return
+            await interaction.followup.send("Current voice channel names:", ephemeral=True, file=channel_names)
 
     set_group = app_commands.Group(
         name="set", description="Set a setting", parent=group
