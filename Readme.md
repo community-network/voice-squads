@@ -9,3 +9,7 @@ You can use "/admin names add/list/remove" to overwrite the names of all the voi
 
 There is also a public instance of this bot available with the following invite url:
 https://discord.com/oauth2/authorize?client_id=1483945839675314257&permissions=274877959184&scope=bot%20applications.commands
+
+<img width="587" height="308" alt="image" src="https://github.com/user-attachments/assets/bbea6d4f-7b80-4aa9-9a21-427eec33902c" />
+
+<img width="1205" height="513" alt="image" src="https://github.com/user-attachments/assets/18b8a2ec-a0bd-4228-825d-6bb5164535da" />
