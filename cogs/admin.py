@@ -317,8 +317,8 @@ class Admin(commands.Cog):
 
     @generate_group.command(name="initial-channel", description="Generate the initial squad channel")
     @app_commands.guild_only()
-    # @app_commands.default_permissions(administrator=True)
-    # @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
     async def generate_initial_channel(self, interaction: discord.Interaction) -> None:
         """Generate the initial squad channel"""
         async with self.bot.db.create_session() as session:
