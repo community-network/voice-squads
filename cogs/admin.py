@@ -340,6 +340,8 @@ class Admin(commands.Cog):
 
                     try:
                         voice_channel = await category.create_voice_channel(unused_channel_names[0])
+                        if guild_settings.default_user_limit is not None:
+                            await voice_channel.edit(user_limit=guild_settings.default_user_limit)
                     except discord.DiscordException as e:
                         await interaction.response.send_message(f"Failed to create the initial voice channel: {e}")
                         return
@@ -459,6 +461,31 @@ class Admin(commands.Cog):
             f'Set the category channel to "{category.name}"', ephemeral=True
         )
 
+
+    defaults_group = app_commands.Group(
+        name="defaults", description="Manage the channels default settings", parent=group
+    )
+
+    @set_group.command(name="user-limit", description="Set default user limit for the generated channels (0 for unlimited)")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
+    async def set_default_user_limit(
+        self, interaction: discord.Interaction, default_user_limit: app_commands.Range[int, 0, 6]
+    ) -> None:
+        if default_user_limit == 0:
+            default_user_limit = None
+        """Set default user limit for the generated channels"""
+        await interaction.response.defer()
+        if interaction.guild is None:
+            return  # is already set to guild_only
+        async with self.bot.db.create_session() as session:
+            await update_guild(
+                session, interaction.guild, {"default_user_limit": default_user_limit}
+            )
+        await interaction.followup.send(
+            f'Set the default user limit to "{"unlimited" if default_user_limit is None else default_user_limit}"', ephemeral=True
+        )
 
 async def setup(bot: VoiceSquadBot) -> None:
     """Setup the cog within discord.py lib"""

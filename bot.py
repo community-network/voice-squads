@@ -9,7 +9,7 @@ from config import load_config
 from database.connection import DatabaseSingleton
 from logger import setup_logger
 from utils.channel_names import get_channel_names
-from utils.server_settings import add_guild, has_guild, has_guild_category
+from utils.server_settings import add_guild, get_guild, has_guild, has_guild_category
 from utils.voice_channels import add_voice_channel, get_voice_channel, get_voice_channels, remove_voice_channel, update_voice_channel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -80,7 +80,10 @@ async def on_voice_channel_join(session: AsyncSession, member: discord.Member, a
             unused_voice_channel_names.remove(channel.name)
 
     if (total_empty_channels == 0 and len(unused_voice_channel_names) > 0):
+        guild_settings = await get_guild(session, member.guild.id)
         new_channel = await category.create_voice_channel(unused_voice_channel_names[0], position=after.channel.position)
+        if guild_settings.default_user_limit is not None:
+            await new_channel.edit(user_limit=guild_settings.default_user_limit)
         await add_voice_channel(session, member.guild.id, new_channel.id)
 
 async def on_voice_channel_leave(session: AsyncSession, member: discord.Member, before: discord.VoiceState):

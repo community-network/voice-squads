@@ -10,6 +10,7 @@ class ServerSetting(Base):
     server_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     category_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     server_name: Mapped[str]
+    default_user_limit: Mapped[Optional[int]]
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
